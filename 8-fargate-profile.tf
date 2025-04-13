@@ -31,12 +31,12 @@ resource "aws_eks_fargate_profile" "default" {
   pod_execution_role_arn = aws_iam_role.fargate_pod_execution.arn
 
   subnet_ids = [
-    aws_subnet.public_zone1.id,
-    aws_subnet.public_zone2.id
+    aws_subnet.private_zone1.id,
+    aws_subnet.private_zone2.id
   ]
-
+  
   selector {
-    namespace = "ez-frame-generator"
+    namespace = "ez-frame-generator-namespace"
   }
 
   tags = local.default_tags
