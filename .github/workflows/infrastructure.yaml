@@ -1,4 +1,4 @@
-name: Ez-fastfood Infrastructure Pipeline
+name: EZ Frame Generator Infrastructure
 
 on:
   workflow_dispatch:
