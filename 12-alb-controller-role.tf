@@ -1,27 +1,11 @@
-# OIDC do EKS
-data "aws_eks_cluster" "eks" {
-  name = aws_eks_cluster.eks.name
-}
-
-data "aws_eks_cluster_auth" "eks" {
-  name = aws_eks_cluster.eks.name
-}
-
-resource "aws_iam_openid_connect_provider" "eks" {
-  client_id_list  = ["sts.amazonaws.com"]
-  thumbprint_list = [data.aws_eks_cluster_auth.eks.certificate_authority[0].data]
-  url             = data.aws_eks_cluster.eks.identity[0].oidc[0].issuer
-}
-
 # Policy baseada no JSON local
 resource "aws_iam_policy" "alb_controller_policy" {
   name   = "${local.name_prefix}-alb-controller-policy"
   policy = file("${path.module}/iam/AWSLoadBalancerController.json")
-
-  tags = local.default_tags
+  tags   = local.default_tags
 }
 
-# Role para o ServiceAccount do controller
+# Role para o ServiceAccount do ALB Controller
 resource "aws_iam_role" "alb_controller" {
   name = "${local.name_prefix}-alb-controller-role"
 

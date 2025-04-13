@@ -1,10 +1,11 @@
+# Assume role policy para o ServiceAccount do frame-generator
 data "aws_iam_policy_document" "frame_generator_assume_role" {
   statement {
     actions = ["sts:AssumeRoleWithWebIdentity"]
 
     principals {
       type        = "Federated"
-      identifiers = [aws_iam_openid_connect_provider.eks.id]
+      identifiers = [aws_iam_openid_connect_provider.eks.arn]
     }
 
     condition {
@@ -15,13 +16,14 @@ data "aws_iam_policy_document" "frame_generator_assume_role" {
   }
 }
 
+# Role que será assumida pelo pod no Fargate via IRSA
 resource "aws_iam_role" "frame_generator_access_role" {
-  name = "${local.name_prefix}-access-role"
+  name               = "${local.name_prefix}-access-role"
   assume_role_policy = data.aws_iam_policy_document.frame_generator_assume_role.json
-
-  tags = local.default_tags
+  tags               = local.default_tags
 }
 
+# Permissões para acessar S3, SQS e DynamoDB
 resource "aws_iam_role_policy" "frame_generator_policy" {
   name = "${local.name_prefix}-access-policy"
   role = aws_iam_role.frame_generator_access_role.id
@@ -30,8 +32,8 @@ resource "aws_iam_role_policy" "frame_generator_policy" {
     Version = "2012-10-17",
     Statement = [
       {
-        Effect   = "Allow",
-        Action   = [
+        Effect = "Allow",
+        Action = [
           "s3:GetObject",
           "s3:PutObject",
           "s3:DeleteObject",
@@ -43,8 +45,8 @@ resource "aws_iam_role_policy" "frame_generator_policy" {
         ]
       },
       {
-        Effect   = "Allow",
-        Action   = [
+        Effect = "Allow",
+        Action = [
           "sqs:SendMessage",
           "sqs:ReceiveMessage",
           "sqs:DeleteMessage",
@@ -53,8 +55,8 @@ resource "aws_iam_role_policy" "frame_generator_policy" {
         Resource = aws_sqs_queue.video_processing.arn
       },
       {
-        Effect   = "Allow",
-        Action   = [
+        Effect = "Allow",
+        Action = [
           "dynamodb:PutItem",
           "dynamodb:GetItem",
           "dynamodb:UpdateItem",
@@ -66,19 +68,4 @@ resource "aws_iam_role_policy" "frame_generator_policy" {
       }
     ]
   })
-}
-
-# OIDC Provider do EKS
-data "aws_eks_cluster" "eks" {
-  name = aws_eks_cluster.eks.name
-}
-
-data "aws_eks_cluster_auth" "eks" {
-  name = aws_eks_cluster.eks.name
-}
-
-resource "aws_iam_openid_connect_provider" "eks" {
-  client_id_list  = ["sts.amazonaws.com"]
-  thumbprint_list = [data.aws_eks_cluster_auth.eks.certificate_authority.0.data]
-  url             = data.aws_eks_cluster.eks.identity.0.oidc.0.issuer
 }
