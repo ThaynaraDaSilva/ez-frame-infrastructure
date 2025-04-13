@@ -1,9 +1,9 @@
 resource "aws_security_group" "alb_sg" {
-  name        = "${local.project}-alb-sg-${local.env}"
+  name        = "${local.name_prefix}-alb-sg"
   description = "Security Group for ALB"
   vpc_id      = aws_vpc.main.id
 
-  # Permitir tráfego HTTP de qualquer origem (0.0.0.0/0)
+  # Permitir tráfego HTTP (ajuste conforme for usar HTTPS depois)
   ingress {
     from_port   = 80
     to_port     = 80
@@ -11,7 +11,7 @@ resource "aws_security_group" "alb_sg" {
     cidr_blocks = ["0.0.0.0/0"]
   }
 
-  # Permitir tráfego de saída para qualquer destino
+  # Permitir tráfego de saída irrestrito
   egress {
     from_port   = 0
     to_port     = 0
@@ -19,8 +19,10 @@ resource "aws_security_group" "alb_sg" {
     cidr_blocks = ["0.0.0.0/0"]
   }
 
-  tags = {
-    Name    = "${local.project}-alb-sg-${local.env}"
-    project = "${local.project}"
-  }
+  tags = merge(
+    local.default_tags,
+    {
+      Name = "${local.name_prefix}-alb-sg"
+    }
+  )
 }
