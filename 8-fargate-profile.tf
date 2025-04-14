@@ -26,6 +26,11 @@ resource "aws_iam_role_policy_attachment" "fargate_pod_execution" {
 
 # Fargate Profile (associa o namespace `ez-frame-generator` às subnets públicas)
 resource "aws_eks_fargate_profile" "default" {
+  depends_on = [
+  aws_iam_role_policy_attachment.fargate_pod_execution,
+  kubernetes_namespace.frame_generator
+]
+
   cluster_name           = aws_eks_cluster.eks.name
   fargate_profile_name   = "${local.name_prefix}-fargate"
   pod_execution_role_arn = aws_iam_role.fargate_pod_execution.arn
@@ -41,9 +46,6 @@ resource "aws_eks_fargate_profile" "default" {
 
   tags = local.default_tags
 
-  depends_on = [
-    aws_iam_role_policy_attachment.fargate_pod_execution
-  ]
 }
 
 resource "aws_eks_fargate_profile" "kube_system" {

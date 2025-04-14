@@ -5,15 +5,17 @@ kubectl get pods -n kube-system
 
 kubectl delete pod -n kube-system -l k8s-app=kube-dns
 
-kubectl describe pod coredns-6b9575c64c-998gn -n kube-system
+kubectl describe pod coredns-6b9575c64c-p8kj2 -n kube-system
 
 kubectl get pods -n kube-system | findstr aws-load-balancer
 
 helm list -n kube-system
 
 
+aws eks list-fargate-profiles --cluster-name ez-frame-generator-dev-cluster
 
 
+kubectl describe pod coredns-6b9575c64c-p8kj2 -n ez-frame-generator-namespace
 
 
 

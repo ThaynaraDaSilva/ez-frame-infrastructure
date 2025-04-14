@@ -1,7 +1,7 @@
-data "aws_eks_cluster" "eks" {
-  name = aws_eks_cluster.eks.name
-  depends_on = [aws_eks_cluster.eks]
-}
+#data "aws_eks_cluster" "eks" {
+#  name = aws_eks_cluster.eks.name
+#  depends_on = [aws_eks_cluster.eks]
+#}
 
 resource "aws_iam_openid_connect_provider" "eks" {
   client_id_list  = ["sts.amazonaws.com"]

@@ -1,4 +1,6 @@
+# =========================================================
 # Security Group para o cluster EKS
+# =========================================================
 resource "aws_security_group" "eks_cluster_sg" {
   name        = "${local.name_prefix}-eks-sg"
   description = "Security Group for EKS Cluster"
@@ -26,7 +28,9 @@ resource "aws_security_group" "eks_cluster_sg" {
   )
 }
 
-# Role para o cluster EKS
+# =========================================================
+# IAM Role para o cluster EKS
+# =========================================================
 resource "aws_iam_role" "eks" {
   name = "${local.name_prefix}-eks-cluster-role"
 
@@ -54,7 +58,9 @@ resource "aws_iam_role_policy_attachment" "eks" {
   role       = aws_iam_role.eks.name
 }
 
+# =========================================================
 # Criação do cluster EKS
+# =========================================================
 resource "aws_eks_cluster" "eks" {
   name     = "${local.name_prefix}-cluster"
   version  = local.eks_version
@@ -82,4 +88,30 @@ resource "aws_eks_cluster" "eks" {
   tags = local.default_tags
 
   depends_on = [aws_iam_role_policy_attachment.eks]
+}
+
+# =========================================================
+# Data sources e provider Kubernetes (acesso ao cluster)
+# =========================================================
+data "aws_eks_cluster" "eks" {
+  name = aws_eks_cluster.eks.name
+}
+
+data "aws_eks_cluster_auth" "eks" {
+  name = aws_eks_cluster.eks.name
+}
+
+provider "kubernetes" {
+  host                   = data.aws_eks_cluster.eks.endpoint
+  cluster_ca_certificate = base64decode(data.aws_eks_cluster.eks.certificate_authority[0].data)
+  token                  = data.aws_eks_cluster_auth.eks.token
+}
+
+# =========================================================
+# Namespace para uso com Fargate
+# =========================================================
+resource "kubernetes_namespace" "frame_generator" {
+  metadata {
+    name = "ez-frame-generator-namespace"
+  }
 }
