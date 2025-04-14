@@ -1,5 +1,6 @@
 data "aws_eks_cluster" "eks" {
-  name = "${local.name_prefix}-cluster"
+  name = aws_eks_cluster.eks.name
+  depends_on = [aws_eks_cluster.eks]
 }
 
 resource "aws_iam_openid_connect_provider" "eks" {
