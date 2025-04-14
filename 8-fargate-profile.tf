@@ -45,3 +45,20 @@ resource "aws_eks_fargate_profile" "default" {
     aws_iam_role_policy_attachment.fargate_pod_execution
   ]
 }
+
+resource "aws_eks_fargate_profile" "kube_system" {
+  cluster_name           = aws_eks_cluster.eks.name
+  fargate_profile_name   = "${local.name_prefix}-kube-system"
+  pod_execution_role_arn = aws_iam_role.fargate_pod_execution.arn
+
+  subnet_ids = [
+    aws_subnet.private_zone1.id,
+    aws_subnet.private_zone2.id
+  ]
+
+  selector {
+    namespace = "kube-system"
+  }
+
+  tags = local.default_tags
+}
