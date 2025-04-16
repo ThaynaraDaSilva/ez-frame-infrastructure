@@ -1,3 +1,11 @@
+resource "aws_iam_policy" "alb_controller_policy" {
+  name        = "AWSLoadBalancerControllerIAMPolicy"
+  path        = "/"
+  description = "Policy for ALB controller"
+  policy      = file("${path.module}/iam/iam-policy.json")
+}
+
+
 # Assume role policy para o ServiceAccount do frame-generator
 data "aws_iam_policy_document" "frame_generator_assume_role" {
   statement {
@@ -69,3 +77,4 @@ resource "aws_iam_role_policy" "frame_generator_policy" {
     ]
   })
 }
+

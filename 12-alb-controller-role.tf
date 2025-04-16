@@ -1,10 +1,3 @@
-# Policy baseada no JSON local
-resource "aws_iam_policy" "alb_controller_policy" {
-  name   = "${local.name_prefix}-alb-controller-policy"
-  policy = file("${path.module}/iam/AWSLoadBalancerController.json")
-  tags   = local.default_tags
-}
-
 # Role para o ServiceAccount do ALB Controller
 resource "aws_iam_role" "alb_controller" {
   name = "${local.name_prefix}-alb-controller-role"
@@ -34,4 +27,15 @@ resource "aws_iam_role" "alb_controller" {
 resource "aws_iam_role_policy_attachment" "alb_controller_policy_attach" {
   role       = aws_iam_role.alb_controller.name
   policy_arn = aws_iam_policy.alb_controller_policy.arn
+}
+
+# Criação do ServiceAccount para o ALB Controller
+resource "kubernetes_service_account" "alb_controller" {
+  metadata {
+    name      = "aws-load-balancer-controller"
+    namespace = "kube-system"
+    annotations = {
+      "eks.amazonaws.com/role-arn" = aws_iam_role.alb_controller.arn
+    }
+  }
 }

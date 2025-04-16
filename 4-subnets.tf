@@ -9,7 +9,7 @@ resource "aws_subnet" "private_zone1" {
     {
       Name                                          = "${local.name_prefix}-private-${local.zone1}"
       "Kubernetes.io/role/internal-elb"             = "1"
-      "Kubernetes.io/cluster/${local.name_prefix}"  = "owned"
+      "Kubernetes.io/cluster/${local.name_prefix}-cluster"  = "owned"
       Type                                          = "private"
     }
   )
@@ -26,7 +26,7 @@ resource "aws_subnet" "private_zone2" {
     {
       Name                                          = "${local.name_prefix}-private-${local.zone2}"
       "Kubernetes.io/role/internal-elb"             = "1"
-      "Kubernetes.io/cluster/${local.name_prefix}"  = "owned"
+      "Kubernetes.io/cluster/${local.name_prefix}-cluster"  = "owned"
       Type                                          = "private"
     }
   )
@@ -43,7 +43,7 @@ resource "aws_subnet" "public_zone1" {
     {
       Name                                          = "${local.name_prefix}-public-${local.zone1}"
       "Kubernetes.io/role/elb"                      = "1"
-      "Kubernetes.io/cluster/${local.name_prefix}"  = "owned"
+      "Kubernetes.io/cluster/${local.name_prefix}-cluster"  = "owned"
       Type                                          = "public"
     }
   )
@@ -59,7 +59,7 @@ resource "aws_subnet" "public_zone2" {
     {
       Name                                          = "${local.name_prefix}-public-${local.zone2}"
       "Kubernetes.io/role/elb"                      = "1"
-      "Kubernetes.io/cluster/${local.name_prefix}"  = "owned"
+      "Kubernetes.io/cluster/${local.name_prefix}-cluster"  = "owned"
       Type                                          = "public"
     }
   )
