@@ -4,7 +4,7 @@ locals{
     region = "us-east-1"
     zone1 = "us-east-1a"
     zone2 = "us-east-1b"
-    eks_name = "ez-frame-generator"
+    eks_name = "ez-frame-generator-cluster"
     eks_version = "1.32"
 
     name_prefix = "${local.project}-${local.env}"
