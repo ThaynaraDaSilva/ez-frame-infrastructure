@@ -1,4 +1,3 @@
-
 # Subnet Privadas
 resource "aws_subnet" "private_zone1" {
   vpc_id = aws_vpc.main.id
@@ -7,14 +6,12 @@ resource "aws_subnet" "private_zone1" {
   tags = merge(
     local.default_tags,
     {
-      Name                                          = "${local.name_prefix}-private-${local.zone1}"
-      "Kubernetes.io/role/internal-elb"             = "1"
-      "Kubernetes.io/cluster/${local.name_prefix}-cluster"  = "owned"
-      Type                                          = "private"
+      "Name"                                                  = "${local.name_prefix}-private-${local.zone1}"
+      "Kubernetes.io/role/internal-elb"                       = "1"
+      "Kubernetes.io/cluster/${local.eks_name}"               = "owned"
     }
   )
 }
-
 
 resource "aws_subnet" "private_zone2" {
   vpc_id = aws_vpc.main.id
@@ -24,10 +21,9 @@ resource "aws_subnet" "private_zone2" {
   tags = merge(
     local.default_tags,
     {
-      Name                                          = "${local.name_prefix}-private-${local.zone2}"
-      "Kubernetes.io/role/internal-elb"             = "1"
-      "Kubernetes.io/cluster/${local.name_prefix}-cluster"  = "owned"
-      Type                                          = "private"
+      "Name"                                                  = "${local.name_prefix}-private-${local.zone2}"
+      "Kubernetes.io/role/internal-elb"                       = "1"
+      "Kubernetes.io/cluster/${local.eks_name}"               = "owned"
     }
   )
 }
@@ -41,10 +37,9 @@ resource "aws_subnet" "public_zone1" {
   tags = merge(
     local.default_tags,
     {
-      Name                                          = "${local.name_prefix}-public-${local.zone1}"
-      "Kubernetes.io/role/elb"                      = "1"
-      "Kubernetes.io/cluster/${local.name_prefix}-cluster"  = "owned"
-      Type                                          = "public"
+      "Name"                                                 = "${local.name_prefix}-public-${local.zone1}"
+      "Kubernetes.io/role/elb"                               = "1"
+      "Kubernetes.io/cluster/${local.eks_name}"              = "owned"
     }
   )
 }
@@ -57,10 +52,9 @@ resource "aws_subnet" "public_zone2" {
   tags = merge(
     local.default_tags,
     {
-      Name                                          = "${local.name_prefix}-public-${local.zone2}"
-      "Kubernetes.io/role/elb"                      = "1"
-      "Kubernetes.io/cluster/${local.name_prefix}-cluster"  = "owned"
-      Type                                          = "public"
+      "Name"                                                 = "${local.name_prefix}-public-${local.zone2}"
+      "Kubernetes.io/role/elb"                               = "1"
+      "Kubernetes.io/cluster/${local.eks_name}"              = "owned"
     }
   )
 }

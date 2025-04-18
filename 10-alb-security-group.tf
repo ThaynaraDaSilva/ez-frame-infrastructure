@@ -1,5 +1,4 @@
 resource "aws_security_group" "alb_sg" {
-  name        = "${local.name_prefix}-alb-sg"
   description = "Security Group for ALB"
   vpc_id      = aws_vpc.main.id
 

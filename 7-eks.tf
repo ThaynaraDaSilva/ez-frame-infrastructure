@@ -32,23 +32,8 @@ resource "aws_security_group" "eks_cluster_sg" {
 # IAM Role para o cluster EKS
 # =========================================================
 resource "aws_iam_role" "eks" {
-  name = "${local.name_prefix}-eks-cluster-role"
-
-  assume_role_policy = <<POLICY
-{
-  "Version": "2012-10-17",
-  "Statement": [
-    {
-      "Effect": "Allow",
-      "Action": "sts:AssumeRole",
-      "Principal": {
-        "Service": "eks.amazonaws.com"
-      }
-    }
-  ]
-}
-POLICY
-
+  name = "${local.eks_name}"
+  assume_role_policy = file("${path.module}/iam/eks-cluster-role.json")
   tags = local.default_tags
 }
 
@@ -62,7 +47,7 @@ resource "aws_iam_role_policy_attachment" "eks" {
 # Criação do cluster EKS
 # =========================================================
 resource "aws_eks_cluster" "eks" {
-  name     = "${local.name_prefix}-cluster"
+  name     = "${local.eks_name}"
   version  = local.eks_version
   role_arn = aws_iam_role.eks.arn
 
@@ -73,8 +58,8 @@ resource "aws_eks_cluster" "eks" {
     subnet_ids = [
       aws_subnet.private_zone1.id,
       aws_subnet.private_zone2.id,
-      aws_subnet.public_zone1.id,
-      aws_subnet.public_zone2.id
+      #aws_subnet.public_zone1.id,
+      #aws_subnet.public_zone2.id
     ]
 
     security_group_ids = [aws_security_group.eks_cluster_sg.id]
@@ -99,28 +84,5 @@ data "aws_eks_cluster" "eks" {
 
 data "aws_eks_cluster_auth" "eks" {
   name = aws_eks_cluster.eks.name
-}
-
-provider "kubernetes" {
-  host                   = data.aws_eks_cluster.eks.endpoint
-  cluster_ca_certificate = base64decode(data.aws_eks_cluster.eks.certificate_authority[0].data)
-  token                  = data.aws_eks_cluster_auth.eks.token
-}
-
-# =========================================================
-# Namespace para uso com Fargate
-# =========================================================
-resource "kubernetes_namespace" "frame_generator" {
-  metadata {
-    name = "ez-frame-generator-namespace"
-  }
-}
-
-provider "helm" {
-  kubernetes {
-    host                   = data.aws_eks_cluster.eks.endpoint
-    cluster_ca_certificate = base64decode(data.aws_eks_cluster.eks.certificate_authority[0].data)
-    token                  = data.aws_eks_cluster_auth.eks.token
-  }
 }
 
