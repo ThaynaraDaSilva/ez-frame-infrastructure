@@ -2,4 +2,4 @@
 aws eks update-kubeconfig --region us-east-1 --name ez-frame-generator-cluster
 aws eks list-nodegroups --cluster-name ez-frame-generator-cluster
 
-ez-frame-generator-node
+kubectl get nodes
