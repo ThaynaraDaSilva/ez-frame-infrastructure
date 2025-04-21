@@ -1,9 +1,8 @@
-name: EZ Frame Generator Infrastructure
+name: Frame Generator Solution Infrastructure
 
 on:
   workflow_dispatch:
-    #branches:
-    #  - main
+ 
 env:
   AWS_REGION: us-east-1
 
