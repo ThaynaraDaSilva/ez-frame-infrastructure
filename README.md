@@ -1,21 +1,21 @@
-# Introdução
+# 📬 ez-frame-infrastructure
 
-Este repositório contém a **configuração do ambiente na AWS** para os microsserviços **order-ms**, **payment-ms**, **catalog-ms** e **user-ms** do projeto **ez-fastfood**. Toda a infraestrutura, incluindo rede, computação, banco de dados e mensageria, é provisionada via Terraform, garantindo uma gestão eficiente e modular.
+## 📌 Introdução
+
+Este repositório contém a **configuração do ambiente na AWS** para os microsserviços **ez-video-ingestion-ms**, **ez-frame-generator-ms**, e **ez-frame-notification-ms** da solução **ez-frame**. Toda a infraestrutura, incluindo rede, computação, armazenamento, banco de dados, mensageria, autenticação e notificações, é provisionada via **Terraform**, garantindo uma gestão eficiente, modular e escalável.
 
 Os principais recursos provisionados incluem:
 
 - **Rede**: VPC, Internet Gateway, Subnets, NAT e Rotas.
-- **Computação**: AWS EKS e seus Nodes.
-- **Balanceamento de Carga**: Application Load Balancer (ALB).
-- **Segurança**: Security Groups para controle de acesso.
-- **Banco de Dados**:
-  - AWS RDS Postgres para os microsserviços **order-ms**, **payment-ms** e **catalog-ms**.
-  - AWS Document para o microsserviço **user-ms**.
-- **Mensageria**: AWS SQS para fila de pagamento, utilizada por order-ms e payment-ms.
+- **Computação**: AWS EKS e seus Nodes para orquestração dos microsserviços.
+- **Segurança**: Security Groups para controle de acesso e permissões IAM para serviços AWS.
+- **Armazenamento**: AWS S3 para armazenamento de vídeos e arquivos ZIP (`ez-frame-video-storage`).
+- **Banco de Dados**: AWS DynamoDB para armazenamento de metadados dos vídeos (`video_metadata`).
+- **Mensageria**: AWS SQS para fila de processamento de vídeos (`video-processing-queue`).
+- **Autenticação**: AWS Cognito para autenticação segura de usuários.
+- **Notificações**: AWS SES para envio de e-mails em caso de falhas no processamento.
 
-## Desenho de Arquitetura
-
-![image](https://github.com/user-attachments/assets/da998aa9-deb2-48fc-9025-06d3e1dfb0d1)
+---
 
 ## 🧱 Componentes da Solução Global ez-frame
 
@@ -32,33 +32,60 @@ Os principais recursos provisionados incluem:
 | **DynamoDB**                 | Armazenamento dos metadados e arquivos gerados (como ZIPs de frames)           | Optamos pelo DynamoDB por ser altamente escalável e disponível, atendendo bem à necessidade de processar múltiplos vídeos em paralelo. Seu modelo NoSQL permite evoluir a estrutura dos dados sem migrações complexas, o que é útil caso futuramente a solução precise armazenar também os vídeos.     |
 | **Amazon S3** | Armazenamento de vídeos e arquivos ZIP gerados | O S3 foi adotado por ser um serviço de armazenamento de objetos altamente durável, escalável e econômico, perfeito para armazenar vídeos enviados pelos usuários e arquivos ZIP gerados pelo `ez-frame-generator-ms` (bucket `ez-frame-video-storage`). Permite o compartilhamento seguro dos arquivos gerados via presigned URLs e suporta vídeos grandes e múltiplos uploads com facilidade. |
 
-## Video de apresentação da arquitetura
+---
+
+## 🎥 Vídeo de Apresentação da Arquitetura
 
 [Desenho de Arquitetura](https://youtu.be/ry-GS9WqmaU)
 
-**OBS...**: Foram criados três schemas dentro de uma única instância de banco de dados para garantir o isolamento lógico dos microsserviços, ao mesmo tempo em que se otimiza os custos. Essa abordagem evita a necessidade de provisionar múltiplas instâncias de banco de dados, reduzindo o consumo de recursos da AWS e simplificando a administração da infraestrutura, sem comprometer a separação dos dados entre os serviços.
+## ✅ Pré-requisitos - Ambiente AWS
 
-## 1. Pré requisitos - ambiente AWS
+1. **Credenciais AWS** para permitir o provisionamento de recursos. No pipeline configurado no GitHub Actions, as credenciais foram armazenadas como secret variables para evitar exposição direta no código:
+   - `AWS_ACCESS_KEY_ID`
+   - `AWS_SECRET_ACCESS_KEY`
 
-1. Credenciais AWS para permitir o provisionamento de recursos. No pipeline configurado no GitHub Actions, as credenciais foram armazenadas como secret variables para evitar exposição direta no código:
-   - AWS_ACCESS_KEY_ID
-   - AWS_SECRET_ACCESS_KEY
-  
-2. Execução da pipeline de criação de infraestrutura. Para este repositório, optamos por manter o pipeline trigger como **workflow_dispatch** para maior controle de quando a pipeline deve ser executada, devido a custo e complexidade do ambiente.
+2. **Execução da pipeline de criação de infraestrutura**. Para este repositório, optamos por manter o pipeline trigger como **workflow_dispatch** para maior controle de quando a pipeline deve ser executada, devido ao custo e complexidade do ambiente.
 
-3. Execução manual do arquivo **postgres-dbs.sql**, disponível na raiz deste repositório: https://github.com/ThaynaraDaSilva/ez-fastfood-infrastructure. A execução deve ocorrer uma única vez, logo após a criação do recurso de banco de dados e antes de subir os microsserviços.
+3. **Configuração do Amazon Cognito**:
+   - Criar um **UserPool** e um **AppClient** para autenticação dos usuários no `ez-video-ingestion-ms`.
 
-4. Criação manual do **sibling** e **collection**, igual a definição que está no arquivo **init-mongo.js**, disponível na raiz deste repositório. A execução deve ocorrer uma única vez, logo após a criação do recurso de banco de dados e antes de subir o microsserviço **user-ms**
+4. **Configuração do Amazon SES**:
+   - Criar uma **entidade de e-mail verificado** para envio de notificações pelo `ez-frame-notification-ms`.
 
-## 2. Pré requisitos - deploy dos microsserviços
+5. **Configuração de permissões IAM**:
+   - Criar um usuário IAM com políticas para acesso aos serviços utilizados:
+     - **SES**: Permissões `ses:SendEmail` e `ses:SendRawEmail`.
+     - **S3**: Permissões para leitura/escrita no bucket `ez-frame-video-storage`.
+     - **SQS**: Permissões para envio e consumo de mensagens na fila `video-processing-queue`.
+     - **DynamoDB**: Permissões para leitura/escrita na tabela `video_metadata`.
+   - Exemplo de **policy JSON** para SES (colar na criação da política no IAM):
 
-É necessário realizar deploy dos microsserviços nesta ordem:
+```json
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Effect": "Allow",
+            "Action": [
+                "ses:SendEmail",
+                "ses:SendRawEmail"
+            ],
+            "Resource": "*"
+        }
+    ]
+}
+```
 
-1. ez-fastfood-user: https://github.com/ThaynaraDaSilva/ez-fastfood-user-ms 
-2. ez-fastfood-catalog: https://github.com/ThaynaraDaSilva/ez-fastfood-catalog-ms
-3. ez-fastfood-payment: https://github.com/ThaynaraDaSilva/ez-fastfood-payment-ms
-4. ez-fastfood-order: https://github.com/ThaynaraDaSilva/ez-fastfood-order-ms
+## ✅ Requisito - Deploy dos Microsserviços
 
-## Desenvolvido por:
-@tchfer : RM357414<br>
-@ThaynaraDaSilva : RM357418<br>
+É necessário realizar o deploy dos microsserviços na seguinte ordem:
+
+1. [Infra](https://github.com/ThaynaraDaSilva/ez-frame-infrastructure)
+2. [Ingestion](https://github.com/ThaynaraDaSilva/ez-video-ingestion-ms)
+3. [Generator](https://github.com/ThaynaraDaSilva/ez-frame-generator-ms)
+4. [Notification](https://github.com/ThaynaraDaSilva/ez-frame-notification-ms)
+
+## 👨‍💻 Desenvolvido por
+
+@tchfer — RM357414  
+@ThaynaraDaSilva — RM357418
