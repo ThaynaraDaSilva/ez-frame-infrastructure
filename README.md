@@ -1,59 +1,130 @@
-# Introdução
+# ⚙️ ez-frame-infrastructure
 
-Este repositório contém a **configuração do ambiente na AWS** para os microsserviços **order-ms**, **payment-ms**, **catalog-ms** e **user-ms** do projeto **ez-fastfood**. Toda a infraestrutura, incluindo rede, computação, banco de dados e mensageria, é provisionada via Terraform, garantindo uma gestão eficiente e modular.
+## 📌 Introdução
+
+Este repositório contém a **configuração do ambiente na AWS** para os microsserviços **ez-video-ingestion-ms**, **ez-frame-generator-ms**, e **ez-frame-notification-ms** da solução **ez-frame**. Toda a infraestrutura, incluindo rede, computação, armazenamento, banco de dados, mensageria, autenticação e notificações, é provisionada via **Terraform**, garantindo uma gestão eficiente, modular e escalável.
 
 Os principais recursos provisionados incluem:
 
 - **Rede**: VPC, Internet Gateway, Subnets, NAT e Rotas.
-- **Computação**: AWS EKS e seus Nodes.
-- **Balanceamento de Carga**: Application Load Balancer (ALB).
-- **Segurança**: Security Groups para controle de acesso.
-- **Banco de Dados**:
-  - AWS RDS Postgres para os microsserviços **order-ms**, **payment-ms** e **catalog-ms**.
-  - AWS Document para o microsserviço **user-ms**.
-- **Mensageria**: AWS SQS para fila de pagamento, utilizada por order-ms e payment-ms.
+- **Computação**: AWS EKS e seus Nodes para orquestração dos microsserviços.
+- **Segurança**: Security Groups para controle de acesso e permissões IAM para serviços AWS.
+- **Armazenamento**: AWS S3 para armazenamento de vídeos e arquivos ZIP (`ez-frame-video-storage`).
+- **Banco de Dados**: AWS DynamoDB para armazenamento de metadados dos vídeos (`video_metadata`).
+- **Mensageria**: AWS SQS para fila de processamento de vídeos (`video-processing-queue`).
+- **Autenticação**: AWS Cognito para autenticação segura de usuários.
+- **Notificações**: AWS SES para envio de e-mails em caso de falhas no processamento.
 
-## Desenho de Arquitetura
+---
 
-![Image](https://github.com/user-attachments/assets/6e22f311-0201-40d3-b06a-1f95c494fb54)
+## 🧩 Desenho de Arquitetura
 
-## Video de apresentação da arquitetura
+![image](https://github.com/user-attachments/assets/da998aa9-deb2-48fc-9025-06d3e1dfb0d1)
 
-## Modelagem BD - Schema: EZ_FASTFOOD_ORDER
-![Image](https://github.com/user-attachments/assets/90cf4f0f-7c17-4168-9abc-32a437f99866)
+---
 
-## Modelagem BD - Schema: EZ_FASTFOOD_PAYMENT
-![Image](https://github.com/user-attachments/assets/ce4193ab-0e5b-462d-b161-ef04167c1b40)
+## 🎥 Vídeo de Apresentação da Arquitetura
 
-## Modelagem BD - Schema: EZ_FASTFOOD_CATALOG
-![Image](https://github.com/user-attachments/assets/34139a6d-bf65-4465-9b8e-083ba6519ffd)
+[Desenho de Arquitetura](https://youtu.be/ry-GS9WqmaU)
 
-## Mongo DB - Estrutura utilizada:
-![Image](https://github.com/user-attachments/assets/a2a12a1b-ab29-40f8-88f7-7eb779c27344)
+---
 
-**OBS...**: Foram criados três schemas dentro de uma única instância de banco de dados para garantir o isolamento lógico dos microsserviços, ao mesmo tempo em que se otimiza os custos. Essa abordagem evita a necessidade de provisionar múltiplas instâncias de banco de dados, reduzindo o consumo de recursos da AWS e simplificando a administração da infraestrutura, sem comprometer a separação dos dados entre os serviços.
+## 📊 Modelagem do Banco de Dados
 
-## 1. Pré requisitos - ambiente AWS
+O `ez-video-ingestion-ms` utiliza o **DynamoDB** para armazenar metadados dos vídeos processados na tabela `video_metadata`. Estrutura da tabela:
 
-1. Credenciais AWS para permitir o provisionamento de recursos. No pipeline configurado no GitHub Actions, as credenciais foram armazenadas como secret variables para evitar exposição direta no código:
-   - AWS_ACCESS_KEY_ID
-   - AWS_SECRET_ACCESS_KEY
-  
-2. Execução da pipeline de criação de infraestrutura. Para este repositório, optamos por manter o pipeline trigger como **workflow_dispatch** para maior controle de quando a pipeline deve ser executada, devido a custo e complexidade do ambiente.
+- **Nome da Tabela**: `video_metadata`
+- **Partition Key**: `videoId` (String, ex.: `vid123`)
+- **Possui atributos, tais como**:
+  - `originalFilename`: Nome do arquivo processado (String, ex.: `video_processed.mp4`)
+  - `status`: Status do processamento (String, ex.: `COMPLETED`, `FAILED`)
+  - `errorMessage`: Mensagem de erro, se aplicável (String, ex.: `Erro no processamento`)
+  - `processedAt`: Data/hora do processamento (String, ex.: `2025-04-19T10:10:00Z`)
+  - `resultObjectKey`: Guarda a presignedURL
+ 
+A criação do banco de banco dados ocorre via Terraform - [Infra](https://github.com/ThaynaraDaSilva/ez-frame-infrastructure)
 
-3. Execução manual do arquivo **postgres-dbs.sql**, disponível na raiz deste repositório: https://github.com/ThaynaraDaSilva/ez-fastfood-infrastructure. A execução deve ocorrer uma única vez, logo após a criação do recurso de banco de dados e antes de subir os microsserviços.
+---
 
-4. Criação manual do **sibling** e **collection**, igual a definição que está no arquivo **init-mongo.js**, disponível na raiz deste repositório. A execução deve ocorrer uma única vez, logo após a criação do recurso de banco de dados e antes de subir o microsserviço **user-ms**
+## 🧱 Componentes da Solução Global ez-frame
 
-## 2. Pré requisitos - deploy dos microsserviços
+| **Componente** | **Finalidade** | **Justificativa** |
+| --- | --- | --- |
+| **Clean Architecture** | Organização interna da solução | Foi escolhida para garantir uma estrutura modular, de fácil manutenção e testes. Essa separação clara entre regras de negócio e infraestrutura facilita a escalabilidade da solução ao longo do tempo, conforme o sistema evolui. |
+| **Java 21** | Linguagem principal para implementação | A linguagem Java foi adotada em substituição ao .NET por uma decisão estratégica, considerando a expertise da equipe com o ecossistema Java. Essa escolha visa otimizar o desenvolvimento, reduzir a curva de aprendizado e garantir eficiência na evolução e manutenção da solução. |
+| **Apache Maven** | Gerenciamento de dependências e build | Ferramenta amplamente utilizada no ecossistema Java, facilita a organização do projeto, o versionamento de dependências e o processo de build e deploy. |
+| **Amazon EKS** | Orquestração dos microsserviços da solução | Solução gerenciada baseada em Kubernetes, que facilita o deploy, a escalabilidade e o gerenciamento dos microsserviços (`generator`, `ingestion`, `notification`), mantendo a consistência da infraestrutura. |
+| **Amazon SES** | Envio de e-mails de notificação em caso de erro | Atende ao requisito de notificação automática para o usuário em caso de falha no processamento. É um serviço simples, eficiente e com baixo custo, ideal para esse tipo de comunicação. |
+| **GitHub Actions** | Automatização de build, testes e deploys | O GitHub Actions foi escolhido por estar amplamente consolidado no mercado e por oferecer uma integração direta com repositórios GitHub, simplificando pipelines de entrega contínua. Além disso, a equipe já possui familiaridade com a ferramenta, o que reduz tempo de configuração e acelera o processo de entrega contínua. |
+| **Amazon Cognito**           | Autenticação e segurança no microsserviço de usuários                          | Solução gerenciada que facilita a implementação de autenticação com usuário e senha, atendendo ao requisito de proteger o sistema e controlando o acesso de forma segura e padronizada.                                                                                                               |
+| **Amazon SQS**               | Gerenciamento da fila de processamento de vídeos                               | Utilizamos SQS para garantir que os vídeos sejam processados de forma assíncrona e segura, sem perda de requisições, mesmo em momentos de pico. Isso também ajuda a escalar o sistema com segurança.                                                                                                   |
+| **DynamoDB**                 | Armazenamento dos metadados           | Optamos pelo DynamoDB por ser altamente escalável e disponível, atendendo bem à necessidade de processar múltiplos vídeos em paralelo. Seu modelo NoSQL permite evoluir a estrutura dos dados sem migrações complexas, o que é útil caso futuramente a solução precise armazenar também os vídeos.     |
+| **Amazon S3** | Armazenamento de vídeos e arquivos ZIP gerados | O S3 foi adotado por ser um serviço de armazenamento de objetos altamente durável, escalável e econômico, perfeito para armazenar vídeos enviados pelos usuários e arquivos ZIP gerados pelo `ez-frame-generator-ms` (bucket `ez-frame-video-storage`). Permite o compartilhamento seguro dos arquivos gerados via presigned URLs e suporta vídeos grandes e múltiplos uploads com facilidade. |
 
-É necessário realizar deploy dos microsserviços nesta ordem:
+---
 
-1. ez-fastfood-user: https://github.com/ThaynaraDaSilva/ez-fastfood-user-ms 
-2. ez-fastfood-catalog: https://github.com/ThaynaraDaSilva/ez-fastfood-catalog-ms
-3. ez-fastfood-payment: https://github.com/ThaynaraDaSilva/ez-fastfood-payment-ms
-4. ez-fastfood-order: https://github.com/ThaynaraDaSilva/ez-fastfood-order-ms
+## ✅ Pré-requisitos para solução ez-frame (Todos os Microserviços)
 
-## Desenvolvido por:
-@tchfer : RM357414<br>
-@ThaynaraDaSilva : RM357418<br>
+- ☕ **Java 21**
+- 📦 **Maven**
+- 🔐 **Credenciais AWS configuradas no repositório como GitHub Secrets**  
+  - `AWS_ACCESS_KEY_ID`  
+  - `AWS_SECRET_ACCESS_KEY`
+- 👤 **Criar UserPool e AppClient no Amazon Cognito**
+- 📄 **Configurar as filas**:
+  - `video-processing-queue`
+  - `video-processing-queue-dlq`
+- 📧 **Criar Entity (e-mail verificado) no Amazon SES**
+- 🛡️ **Criar usuário IAM com política SES para envio de e-mails**  
+  - Permissões necessárias: `ses:SendEmail` e `ses:SendRawEmail`
+  - Exemplo de **policy JSON** para colar na criação da política no IAM:
+
+```json
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Effect": "Allow",
+            "Action": [
+                "ses:SendEmail",
+                "ses:SendRawEmail"
+            ],
+            "Resource": "*"
+        }
+    ]
+}
+```
+
+Para este repositório, optamos por manter o pipeline trigger como workflow_dispatch para maior controle de quando a pipeline deve ser executada, devido ao custo e complexidade do ambiente.
+
+---
+
+## ✅ Requisito - Deploy dos Microsserviços
+
+É necessário realizar o deploy dos microsserviços na seguinte ordem:
+
+1. [Infra](https://github.com/ThaynaraDaSilva/ez-frame-infrastructure)
+2. [Ingestion](https://github.com/ThaynaraDaSilva/ez-video-ingestion-ms)
+3. [Generator](https://github.com/ThaynaraDaSilva/ez-frame-generator-ms)
+4. [Notification](https://github.com/ThaynaraDaSilva/ez-frame-notification-ms)
+
+---
+
+## 🎥 Vídeos de apresentação
+
+[📐 Desenho de Arquitetura](https://youtu.be/ry-GS9WqmaU)
+
+[🔧 Github Rulesets, Pipelines e Sonarqube](https://youtu.be/jqO4ldizBwY)
+
+[🔐 Jornada de Login e Upload de Vídeo](https://youtu.be/sk-AvQ9TnIw)
+
+[📧 Jornada de Envio de Notificação](https://youtu.be/mE9PhuUo4Co)
+
+[🖼️ Jornada de Geração de Frames](https://youtu.be/bfRUG1w-S8w)
+
+---
+
+## 👨‍💻 Desenvolvido por
+
+@tchfer — RM357414  
+@ThaynaraDaSilva — RM357418
