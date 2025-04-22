@@ -1,4 +1,4 @@
-# 📬 ez-frame-infrastructure
+# ⚙️ ez-frame-infrastructure
 
 ## 📌 Introdução
 
