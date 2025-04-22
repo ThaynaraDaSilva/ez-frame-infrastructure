@@ -17,6 +17,29 @@ Os principais recursos provisionados incluem:
 
 ---
 
+## 🧩 Desenho de Arquitetura
+
+![image](https://github.com/user-attachments/assets/da998aa9-deb2-48fc-9025-06d3e1dfb0d1)
+
+---
+
+## 📊 Modelagem do Banco de Dados
+
+O `ez-video-ingestion-ms` utiliza o **DynamoDB** para armazenar metadados dos vídeos processados na tabela `video_metadata`. Estrutura da tabela:
+
+- **Nome da Tabela**: `video_metadata`
+- **Partition Key**: `videoId` (String, ex.: `vid123`)
+- **Possui atributos, tais como**:
+  - `originalFilename`: Nome do arquivo processado (String, ex.: `video_processed.mp4`)
+  - `status`: Status do processamento (String, ex.: `COMPLETED`, `FAILED`)
+  - `errorMessage`: Mensagem de erro, se aplicável (String, ex.: `Erro no processamento`)
+  - `processedAt`: Data/hora do processamento (String, ex.: `2025-04-19T10:10:00Z`)
+  - `resultObjectKey`: Guarda a presignedURL
+ 
+A criação do banco de banco dados ocorre via Terraform - [Infra](https://github.com/ThaynaraDaSilva/ez-frame-infrastructure)
+
+---
+
 ## 🧱 Componentes da Solução Global ez-frame
 
 | **Componente** | **Finalidade** | **Justificativa** |
@@ -38,27 +61,21 @@ Os principais recursos provisionados incluem:
 
 [Desenho de Arquitetura](https://youtu.be/ry-GS9WqmaU)
 
-## ✅ Pré-requisitos - Ambiente AWS
+## ✅ Pré-requisitos para solução ez-frame (Todos os Microserviços)
 
-1. **Credenciais AWS** para permitir o provisionamento de recursos. No pipeline configurado no GitHub Actions, as credenciais foram armazenadas como secret variables para evitar exposição direta no código:
-   - `AWS_ACCESS_KEY_ID`
-   - `AWS_SECRET_ACCESS_KEY`
-
-2. **Execução da pipeline de criação de infraestrutura**. Para este repositório, optamos por manter o pipeline trigger como **workflow_dispatch** para maior controle de quando a pipeline deve ser executada, devido ao custo e complexidade do ambiente.
-
-3. **Configuração do Amazon Cognito**:
-   - Criar um **UserPool** e um **AppClient** para autenticação dos usuários no `ez-video-ingestion-ms`.
-
-4. **Configuração do Amazon SES**:
-   - Criar uma **entidade de e-mail verificado** para envio de notificações pelo `ez-frame-notification-ms`.
-
-5. **Configuração de permissões IAM**:
-   - Criar um usuário IAM com políticas para acesso aos serviços utilizados:
-     - **SES**: Permissões `ses:SendEmail` e `ses:SendRawEmail`.
-     - **S3**: Permissões para leitura/escrita no bucket `ez-frame-video-storage`.
-     - **SQS**: Permissões para envio e consumo de mensagens na fila `video-processing-queue`.
-     - **DynamoDB**: Permissões para leitura/escrita na tabela `video_metadata`.
-   - Exemplo de **policy JSON** para SES (colar na criação da política no IAM):
+- ☕ **Java 21**
+- 📦 **Maven**
+- 🔐 **Credenciais AWS configuradas no repositório como GitHub Secrets**  
+  - `AWS_ACCESS_KEY_ID`  
+  - `AWS_SECRET_ACCESS_KEY`
+- 👤 **Criar UserPool e AppClient no Amazon Cognito**
+- 📄 **Configurar as filas**:
+  - `video-processing-queue`
+  - `video-processing-queue-dlq`
+- 📧 **Criar Entity (e-mail verificado) no Amazon SES**
+- 🛡️ **Criar usuário IAM com política SES para envio de e-mails**  
+  - Permissões necessárias: `ses:SendEmail` e `ses:SendRawEmail`
+  - Exemplo de **policy JSON** para colar na criação da política no IAM:
 
 ```json
 {
@@ -76,6 +93,10 @@ Os principais recursos provisionados incluem:
 }
 ```
 
+Para este repositório, optamos por manter o pipeline trigger como workflow_dispatch para maior controle de quando a pipeline deve ser executada, devido ao custo e complexidade do ambiente.
+
+---
+
 ## ✅ Requisito - Deploy dos Microsserviços
 
 É necessário realizar o deploy dos microsserviços na seguinte ordem:
@@ -84,6 +105,22 @@ Os principais recursos provisionados incluem:
 2. [Ingestion](https://github.com/ThaynaraDaSilva/ez-video-ingestion-ms)
 3. [Generator](https://github.com/ThaynaraDaSilva/ez-frame-generator-ms)
 4. [Notification](https://github.com/ThaynaraDaSilva/ez-frame-notification-ms)
+
+---
+
+## 🎥 Vídeos de apresentação
+
+[📐 Desenho de Arquitetura](https://youtu.be/ry-GS9WqmaU)
+
+[🔧 Github Rulesets, Pipelines e Sonarqube](https://youtu.be/jqO4ldizBwY)
+
+[🔐 Jornada de Login e Upload de Vídeo](https://youtu.be/sk-AvQ9TnIw)
+
+[📧 Jornada de Envio de Notificação](https://youtu.be/mE9PhuUo4Co)
+
+[🖼️ Jornada de Geração de Frames](https://youtu.be/bfRUG1w-S8w)
+
+---
 
 ## 👨‍💻 Desenvolvido por
 
