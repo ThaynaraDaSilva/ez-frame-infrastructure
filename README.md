@@ -23,6 +23,12 @@ Os principais recursos provisionados incluem:
 
 ---
 
+## 🎥 Vídeo de Apresentação da Arquitetura
+
+[Desenho de Arquitetura](https://youtu.be/ry-GS9WqmaU)
+
+---
+
 ## 📊 Modelagem do Banco de Dados
 
 O `ez-video-ingestion-ms` utiliza o **DynamoDB** para armazenar metadados dos vídeos processados na tabela `video_metadata`. Estrutura da tabela:
@@ -56,10 +62,6 @@ A criação do banco de banco dados ocorre via Terraform - [Infra](https://githu
 | **Amazon S3** | Armazenamento de vídeos e arquivos ZIP gerados | O S3 foi adotado por ser um serviço de armazenamento de objetos altamente durável, escalável e econômico, perfeito para armazenar vídeos enviados pelos usuários e arquivos ZIP gerados pelo `ez-frame-generator-ms` (bucket `ez-frame-video-storage`). Permite o compartilhamento seguro dos arquivos gerados via presigned URLs e suporta vídeos grandes e múltiplos uploads com facilidade. |
 
 ---
-
-## 🎥 Vídeo de Apresentação da Arquitetura
-
-[Desenho de Arquitetura](https://youtu.be/ry-GS9WqmaU)
 
 ## ✅ Pré-requisitos para solução ez-frame (Todos os Microserviços)
 
