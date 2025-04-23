@@ -42,8 +42,7 @@ O `ez-video-ingestion-ms` utiliza o **DynamoDB** para armazenar metadados dos v�
   - `processedAt`: Data/hora do processamento (String, ex.: `2025-04-19T10:10:00Z`)
   - `resultObjectKey`: Guarda a presignedURL
  
-**A criação do banco de banco dados ocorre via Terraform (pipeline deste repositório), sem a necessidade de execução de qualquer script a parte.**
-
+**A criação do banco de dados ocorre via Terraform, sem a necessidade de execução de qualquer script a parte. O ambiente pode ser criado via pipeline.**
 ---
 
 ## 🧱 Componentes da Solução Global ez-frame
